@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 import math
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import subprocess
 import time
 import tensorflow as tf
@@ -43,6 +44,7 @@ def time_string():
 
 
 def train(log_dir, args):
+  os.environ["CUDA_VISIBLE_DEVICES"] = "0"
   commit = get_git_commit() if args.git else 'None'
   checkpoint_path = os.path.join(log_dir, 'model.ckpt')
   input_path = os.path.join(args.base_dir, args.input)

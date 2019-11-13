@@ -20,17 +20,19 @@ def build_from_path(in_dir, out_dir, num_workers=1, tqdm=lambda x: x):
       A list of tuples describing the training examples. This should be written to train.txt
   '''
 
+  # We use ProcessPoolExecutor to parallelize across processes. This is just an optimization and you
+  # can omit it and just call _process_utterance on each input if you want.
+  executor = ProcessPoolExecutor(max_workers=num_workers)
+  futures = []
   with open(os.path.join(in_dir, 'ProsodyLabeling/000001-010000.txt'), 'r', encoding='utf-8') as f:
     content = f.readlines()
-    num = int(len(content)/2)
+    num = int(len(content)//2)
     index = 1
     for lineidx in range(num):
       wavidx_raw = content[lineidx*2].split()[0]
       wavidx = int(wavidx_raw)
-      wavpath = os.path.join(in_dir, ('Wave/%s.wav' % wavidx_raw))
+      wav_path = os.path.join(in_dir, ('Wave/%s.wav' % wavidx_raw))
       text = content[lineidx*2+1].strip()
-      print(wavpath, text)
-      exit(0)
       futures.append(executor.submit(partial(_process_utterance, out_dir, index, wav_path, text)))
       index += 1
   return [future.result() for future in tqdm(futures)]
@@ -63,8 +65,8 @@ def _process_utterance(out_dir, index, wav_path, text):
   mel_spectrogram = audio.melspectrogram(wav).astype(np.float32)
 
   # Write the spectrograms to disk:
-  spectrogram_filename = 'thchs30-spec-%05d.npy' % index
-  mel_filename = 'thchs30-mel-%05d.npy' % index
+  spectrogram_filename = 'databaker-spec-%05d.npy' % index
+  mel_filename = 'databaker-mel-%05d.npy' % index
   np.save(os.path.join(out_dir, spectrogram_filename), spectrogram.T, allow_pickle=False)
   np.save(os.path.join(out_dir, mel_filename), mel_spectrogram.T, allow_pickle=False)
 
